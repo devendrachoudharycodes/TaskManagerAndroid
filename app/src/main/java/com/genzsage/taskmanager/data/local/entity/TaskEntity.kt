@@ -1,4 +1,4 @@
-package com.genzsage.taskmanager.core.local.entity
+package com.genzsage.taskmanager.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
