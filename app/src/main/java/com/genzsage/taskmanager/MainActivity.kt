@@ -4,8 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.genzsage.taskmanager.presentation.home.TasksScreen
-import com.genzsage.taskmanager.presentation.newtask.CreateOrUpdateTask
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.genzsage.taskmanager.presentation.MainAppNavigation
 import com.genzsage.taskmanager.ui.theme.TaskManagerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -16,11 +20,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            TaskManagerTheme {
-            TasksScreen(
-                onCreateTaskClick = {},
-                onNavigateToSettings = {  }
-            )         }
+            val systemDark=isSystemInDarkTheme()
+            var theme by remember {
+                mutableStateOf(systemDark)
+            }
+
+            TaskManagerTheme(
+                darkTheme = theme
+            ) {
+                MainAppNavigation(
+                    isDarkMode = theme,
+                    onThemeChange = {
+                        theme = !theme
+                    }
+                )
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package com.genzsage.taskmanager.domain.repository
 
 import com.genzsage.taskmanager.domain.model.Task
 import kotlinx.coroutines.flow.Flow
+import java.util.Optional
 
 interface TaskRepository {
 
@@ -20,6 +21,8 @@ interface TaskRepository {
 
     fun getAllTasksSortedByStatusAsc(): Flow<List<Task>>
     fun getAllTasksSortedByStatusDesc(): Flow<List<Task>>
+
+    suspend fun getTaskById(id: Int): Task?
 
     //write operations
 

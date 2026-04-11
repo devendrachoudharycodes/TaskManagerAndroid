@@ -6,6 +6,7 @@ import com.genzsage.taskmanager.domain.model.Task
 import com.genzsage.taskmanager.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Optional
 import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
@@ -71,6 +72,11 @@ class TaskRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
     }
+
+    override suspend fun getTaskById(id: Int): Task? {
+        return dao.getTaskWithId(id)
+    }
+
 
     override suspend fun addTask(task: Task) {
         dao.addTask(task.toEntity())

@@ -1,8 +1,11 @@
 package com.genzsage.taskmanager.presentation.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -10,118 +13,95 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.genzsage.taskmanager.domain.model.Task
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TasksScreen(
-    modifier: Modifier = Modifier,
-    viewModel: TaskViewModel= hiltViewModel(),
-    onCreateTaskClick: () -> Unit,
-    onNavigateToSettings: () -> Unit
-) {
-    val state by viewModel.uiState.collectAsState()
+fun TasksScreen(modifier: Modifier = Modifier.fillMaxSize(),
+                tasksViewModel: TaskViewModel=hiltViewModel(),
+                onEdit: (Task) -> Unit) {
+    val sortType=tasksViewModel.uiState.collectAsState().value.currentSortType
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text("My Tasks") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                actions = {
-                    // You could add a settings icon here
-                    TextButton(onClick = onNavigateToSettings) {
-                        Text("Settings")
+    val tabs = listOf("Ongoing Tasks", "Completed Tasks")
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    Column {
+
+    PrimaryTabRow (selectedTabIndex = pagerState.currentPage) {
+        tabs.forEachIndexed { index, title ->
+            Tab(
+                selected = pagerState.currentPage == index,
+                onClick = {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(index)
                     }
-                }
+                },
+                text = { Text(text = title) }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onCreateTaskClick) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Create Task")
-            }
         }
-    ) { paddingValues ->
+    }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                state.tasks.isEmpty() -> {
-                    Text(
-                        text = "No tasks yet. Create one!",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.tasks){
-                            TaskItem(it,{viewModel.onTaskDeleted(it)})
-                        }
+    HorizontalPager(
+        state = pagerState
+    ) { page ->
 
-                    }
-                }
+            when (page) {
+                0 ->OngoingTasks(
+                    tasksViewModel.uiState.collectAsState()
+                        .value.tasks.filter { task -> !task.isCompleted },
+                    onDelete = { task -> tasksViewModel.onTaskDeleted(task) },
+                    onMarkComplete = { task -> tasksViewModel.onTaskCompletedOrNot(task) },
+                    onEdit = onEdit
+                )
+                1 ->CompletedTasks(
+                    tasksViewModel.uiState.collectAsState()
+                        .value.tasks.filter { task -> task.isCompleted },
+                    onDelete = { task -> tasksViewModel.onTaskDeleted(task) },
+                    onMarkInComplete = { task -> tasksViewModel.onTaskCompletedOrNot(task) },
+                    onEdit = onEdit
+                )
             }
+
+    }
+}}
+
+@Composable
+fun OngoingTasks(tasks:List<Task>,onDelete:(Task)-> Unit,onMarkComplete:(Task)-> Unit,onEdit:(Task)->Unit) {
+    LazyColumn {
+        items(tasks) { task ->
+            TaskItem(
+                task = task,
+                onDelete = { onDelete(task) },
+                onChecked = { onMarkComplete(task) },
+                onEdit = { onEdit(task)},
+            )
+            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
 
 @Composable
-fun TaskItem(
-    task: Task,
-    onDeleteClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (task.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = task.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Task",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
+fun CompletedTasks(tasks:List<Task>,onDelete:(Task)-> Unit,onMarkInComplete:(Task)->Unit,onEdit:(Task)->Unit) {
+    LazyColumn {
+        items(tasks) { task ->
+            TaskItem(
+                task = task,
+                onDelete = { onDelete(task) },
+                onChecked = {
+                    onMarkInComplete(task)
+                },
+                onEdit = {onEdit(task)}
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
         }
     }
 }

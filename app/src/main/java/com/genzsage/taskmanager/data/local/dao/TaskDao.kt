@@ -7,7 +7,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.genzsage.taskmanager.data.local.entity.TaskEntity
+import com.genzsage.taskmanager.domain.model.Task
 import kotlinx.coroutines.flow.Flow
+import java.util.Optional
 
 @Dao
 interface TaskDao {
@@ -50,4 +52,7 @@ interface TaskDao {
 
     @Delete
     suspend fun deleteTask(task: TaskEntity)
+
+    @Query("SELECT * FROM tasks WHERE id = :id")
+    suspend fun getTaskWithId(id: Int): Task?
 }

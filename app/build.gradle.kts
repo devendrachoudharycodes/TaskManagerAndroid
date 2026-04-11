@@ -43,10 +43,16 @@ android {
 }
 
 dependencies {
+    //material icons
+    implementation(libs.androidx.material.icons.extended)
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.androidx.material3)
     ksp(libs.room.compiler)
+    //navigation
+    implementation(libs.androidx.navigation.compose)
+
 
     // Hilt
     implementation(libs.hilt.android)

@@ -53,9 +53,16 @@ class TaskViewModel @Inject constructor(
 
 
 
-    fun onTaskDeleted(task: Task) {
+    fun onTaskDeleted(task:Task) {
         viewModelScope.launch {
             repository.deleteTask(task)
+        }
+    }
+
+    fun onTaskCompletedOrNot(task:Task){
+        viewModelScope.launch {
+
+            repository.updateTask(task.copy(isCompleted = !task.isCompleted))
         }
     }
 
